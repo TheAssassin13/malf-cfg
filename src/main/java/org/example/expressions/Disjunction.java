@@ -13,6 +13,16 @@ public class Disjunction implements Expression {
 
   @Override
   public ContextFreeGrammar toContextFreeGrammar() {
-    return null;
+    var left_grammar = left.toContextFreeGrammar();
+    var right_grammar = right.toContextFreeGrammar();
+
+    var grammar = ContextFreeGrammar.join(left_grammar, right_grammar);
+
+    grammar.addNonTerminalState("<S0>");
+    grammar.setInitialState("<S0>");
+    grammar.addTransition("<S0>", left_grammar.getInitialState());
+    grammar.addTransition("<S0>", right_grammar.getInitialState());
+
+    return grammar;
   }
 }

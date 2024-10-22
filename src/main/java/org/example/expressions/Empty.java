@@ -7,6 +7,11 @@ public class Empty implements Expression {
 
     @Override
     public ContextFreeGrammar toContextFreeGrammar() {
-        return null;
+        var grammar = new ContextFreeGrammar();
+
+        grammar.addNonTerminalState("<S0>");
+        grammar.setInitialState("<S0>");
+
+        return grammar;
     }
 }

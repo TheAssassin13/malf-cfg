@@ -3,6 +3,8 @@ package org.example.expressions;
 
 import org.example.automatons.ContextFreeGrammar;
 
+import java.util.LinkedList;
+
 public class Char implements Expression {
   char character;
 
@@ -12,6 +14,13 @@ public class Char implements Expression {
 
   @Override
   public ContextFreeGrammar toContextFreeGrammar() {
-    return null;
+    var grammar = new ContextFreeGrammar();
+
+    grammar.addNonTerminalState("<S0>");
+    grammar.addTerminalState(String.valueOf(character));
+    grammar.addTransition("<S0>", String.valueOf(character));
+    grammar.setInitialState("<S0>");
+
+    return grammar;
   }
 }

@@ -11,6 +11,18 @@ public class Kleene implements Expression {
 
   @Override
   public ContextFreeGrammar toContextFreeGrammar() {
-    return null;
+    var grammar = expression.toContextFreeGrammar();
+
+    grammar.increaseStateNumbers(1);
+
+    grammar.addTerminalState("_");
+    grammar.addNonTerminalState("<S0>");
+
+    grammar.addTransition("<S0>", grammar.getInitialState() + "<S0>");
+    grammar.addTransition("<S0>", "_");
+
+    grammar.setInitialState("<S0>");
+
+    return grammar;
   }
 }

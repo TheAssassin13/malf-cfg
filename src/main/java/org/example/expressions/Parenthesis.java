@@ -12,6 +12,6 @@ public class Parenthesis implements Expression {
 
   @Override
   public ContextFreeGrammar toContextFreeGrammar() {
-    return null;
+    return expr.toContextFreeGrammar();
   }
 }
