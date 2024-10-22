@@ -1,0 +1,97 @@
+@startuml
+
+
+skinparam nodesep 50
+skinparam ranksep 80
+
+package automatons {
+    class ContextFreeGrammar {
+      +nonTerminalStates: List<String>
+      +terminalStates: List<String>
+      +transitions: List<String[]>
+      +initialState: String
+
+      +ContextFreeGramar(Expression exp)   
+    }
+
+    class PushdownAutomatonTransition {
+        +initialState: String
+        +character: char
+        +toPop: String
+        +endState: String
+        +toStack: String
+}
+
+    class PushdownAutomaton {
++states: List<String>
++alphabet: List<char>
++stackAlphabet: List<String>
++transitions: List<PushdownAutomatonTransition>
++initialState: String
++finalStates: List<String>
+
++PushdownAutomaton(ContextFreeGrammar)
+    }
+
+
+    class OptimizedPushdownAutomaton extends PushdownAutomaton {
++OptimizedPushdownAutomaton(ContextFreeGrammar)
++OptimizedPushdownAutomaton(PushdownAutomaton)
+    }
+
+
+}
+
+package expressions {
+    abstract class Expression {
+        {Abstract} +getNFA(): automatons.NFA
+    }
+
+    class Char extends Expression {
+        - character: char
+        +getNFA(): automatons.NFA
+    }
+
+    class Empty extends Expression {
+        +getNFA(): automatons.NFA
+    }
+
+    class Disjunction extends Expression {
+        -left: Expression
+        -right: Expression
+        +getNFA(): automatons.NFA
+    }
+
+    class Concatenation extends Expression {
+        -left: Expression
+        -right: Expression
+        +getNFA(): automatons.NFA
+    }
+
+    class Kleene extends Expression {
+        -expression: Expression
+        +getNFA(): automatons.NFA
+    }
+
+    class Parenthesis extends Expression {
+        -expr: Expression
+        +getNFA(): automatons.NFA
+    }
+
+    class ExpressionFactory {
+        {static} +parseExpression(String): Expression
+    }
+
+    class InvalidExpression extends Exception {
+    }
+}
+
+
+ExpressionFactory .> Expression : creates
+Expression .> InvalidExpression : throws
+ContextFreeGrammar .. PushdownAutomaton
+OptimizedPushdownAutomaton .. PushdownAutomaton
+ContextFreeGrammar .. Expression
+PushdownAutomatonTransition -o PushdownAutomaton
+
+@enduml
