@@ -120,7 +120,7 @@ public class ContextFreeGrammar {
         }
         sb.append("}\n");
 
-        sb.append("S=").append(initialState);
+        sb.append("S=").append(initialState).append("\n");
 
         return sb.toString();
     }
