@@ -4,8 +4,12 @@ import java.util.Stack;
 
 public class ExpressionFactory {
   public static Expression parseExpression(String raw_expression) throws InvalidExpression {
-      //Different characters for the same symbol
-    if (raw_expression.isEmpty() ||
+    if (raw_expression.isEmpty()) {
+        throw new InvalidExpression("Bad formed expression");
+    }
+
+    //Different characters for the same symbol
+    if (
             raw_expression.equals("∼") ||
             raw_expression.equals("~") ||
             raw_expression.equals("⁓"))
@@ -41,7 +45,7 @@ public class ExpressionFactory {
       return new Char(raw_expression.charAt(0));
     }
 
-    return new Empty();
+    throw new InvalidExpression("bad formed expression");
   }
 
   private static int searchOutOfParenthesis(String str, char toSearch) throws InvalidExpression {
