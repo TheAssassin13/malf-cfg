@@ -3,6 +3,8 @@ package org.example.expressions;
 import java.util.Stack;
 
 public class ExpressionFactory {
+    private static String allowedAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ¿?";
+
   public static Expression parseExpression(String raw_expression) throws InvalidExpression {
     if (raw_expression.isEmpty()) {
         throw new InvalidExpression("Bad formed expression");
@@ -42,7 +44,13 @@ public class ExpressionFactory {
     }
 
     if (length == 1) {
-      return new Char(raw_expression.charAt(0));
+      var c = raw_expression.charAt(0);
+    
+      if (allowedAlphabet.indexOf(c) == -1) {
+          throw new InvalidExpression("Not allowed character");
+      }
+
+      return new Char(c);
     }
 
     throw new InvalidExpression("bad formed expression");
