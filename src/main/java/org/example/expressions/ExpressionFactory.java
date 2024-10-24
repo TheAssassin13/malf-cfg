@@ -3,7 +3,7 @@ package org.example.expressions;
 import java.util.Stack;
 
 public class ExpressionFactory {
-    private static String allowedAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ¿?";
+    private static String allowedAlphabet = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ¿?";
 
   public static Expression parseExpression(String raw_expression) throws InvalidExpression {
     if (raw_expression.isEmpty()) {
