@@ -8,7 +8,7 @@ public class PushdownAutomaton {
     private Set<String> stackAlphabet; // Gamma
     private List<PushdownAutomatonTransition> transitions; // Delta
     private String initialState;  // s
-    private String finalState;  // F
+    private Set<String> finalState;  // F
 
     public PushdownAutomaton(ContextFreeGrammar cfg) {
         formalizeAutomaton(cfg);
@@ -19,7 +19,7 @@ public class PushdownAutomaton {
         this.alphabet = new TreeSet<>(cfg.getTerminalStates());
         this.stackAlphabet = new HashSet<>(cfg.getTerminalStates());
         this.initialState = "q0";
-        this.finalState = "q1";
+        this.finalState = new TreeSet<>(List.of("q1"));
         this.transitions = getTransitions(cfg);
 
         this.stackAlphabet.addAll(cfg.nonTerminalStates);
@@ -28,7 +28,7 @@ public class PushdownAutomaton {
     private List<PushdownAutomatonTransition> getTransitions(ContextFreeGrammar cfg) {
         List<PushdownAutomatonTransition> transitions = new ArrayList<>();
 
-        transitions.add(new PushdownAutomatonTransition(this.initialState, "_", "_", this.finalState, cfg.getInitialState()));
+        transitions.add(new PushdownAutomatonTransition(this.initialState, "_", "_", this.finalState.iterator().next(), cfg.getInitialState()));
 
         transitions.addAll(getTerminalTransitions(cfg.terminalStates));
         transitions.addAll(getNonTerminalTransitions(cfg.transitions));
@@ -40,7 +40,7 @@ public class PushdownAutomaton {
         List<PushdownAutomatonTransition> transitions = new ArrayList<>();
 
         for (String s : cfgTerminals) {
-            transitions.add(new PushdownAutomatonTransition(this.finalState, s, s, this.finalState, "_"));
+            transitions.add(new PushdownAutomatonTransition(this.finalState.iterator().next(), s, s, this.finalState.iterator().next(), "_"));
         }
 
         return transitions;
@@ -50,10 +50,34 @@ public class PushdownAutomaton {
         List<PushdownAutomatonTransition> transitions = new ArrayList<>();
 
         for (String[] s : cfgNonTerminals) {
-            transitions.add(new PushdownAutomatonTransition(this.finalState, "_", s[0], this.finalState, s[1]));
+            transitions.add(new PushdownAutomatonTransition(this.finalState.iterator().next(), "_", s[0], this.finalState.iterator().next(), s[1]));
         }
 
         return transitions;
+    }
+
+    public Set<String> getStates() {
+        return states;
+    }
+
+    public Set<String> getAlphabet() {
+        return alphabet;
+    }
+
+    public Set<String> getStackAlphabet() {
+        return stackAlphabet;
+    }
+
+    public List<PushdownAutomatonTransition> getTransitions() {
+        return transitions;
+    }
+
+    public String getInitialState() {
+        return initialState;
+    }
+
+    public Set<String> getFinalState() {
+        return finalState;
     }
 
     @Override

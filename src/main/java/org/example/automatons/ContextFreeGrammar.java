@@ -2,10 +2,7 @@ package org.example.automatons;
 
 import com.sun.source.tree.Tree;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -31,6 +28,95 @@ public class ContextFreeGrammar {
         this.initialState = initialState;
     }
 
+    public ContextFreeGrammar(PushdownAutomaton pda) {
+        nonTerminalStates = new TreeSet<>();
+        terminalStates = new TreeSet<>();
+        transitions = new ArrayList<>();
+        initialState = "<S>";
+        nonTerminalStates.add(initialState);
+        String[] newTransition;
+        // first and second rule
+        for (String f : pda.getFinalState()) {
+            newTransition = new String[]{initialState, "<" + pda.getInitialState() + ",_," + f + ">"};
+            transitions.add(newTransition);
+            newTransition = new String[]{"<" + f + ",_," + f + ">", "_"};
+            transitions.add(newTransition);
+        }
+
+        for (PushdownAutomatonTransition pdaTransition : pda.getTransitions()) {
+            addTransitionsFromPdaTransition(pdaTransition, pda);
+        }
+    }
+
+    private void addTransitionsFromPdaTransition(PushdownAutomatonTransition pdaTransition, PushdownAutomaton pda) {
+        String[] newTransition;
+        if (Objects.equals(pdaTransition.getToStack(), "_") && Objects.equals(pdaTransition.getToPop(), "_")) {
+            pda.getStackAlphabet().add("_");
+            for (String c : pda.getStackAlphabet()) {
+                for (String s : pda.getStates()) {
+                    newTransition = new String[]{
+                            "<" + pdaTransition.getInitialState() + "," + c + "," + s + ">",
+                            pdaTransition.getCharacter() + "<" + pdaTransition.getFinalState() + "," + c + "," + s + ">"
+                    };
+                    transitions.add(newTransition);
+                }
+            }
+            pda.getStackAlphabet().remove("_");
+        } else if (Objects.equals(pdaTransition.getToStack(), "_")) {
+            for (String s : pda.getStates()) {
+                newTransition = new String[]{
+                        "<" + pdaTransition.getInitialState() + "," + pdaTransition.getToPop() + "," + s + ">",
+                        pdaTransition.getCharacter() + "<" + pdaTransition.getFinalState() + ",_," + s + ">"
+                };
+                transitions.add(newTransition);
+            }
+        } else if (Objects.equals(pdaTransition.getToPop(), "_")) {
+            List<List<String>> combinatorics = generateCombinations(pda.getStates(), pdaTransition.getFinalState(), pdaTransition.getToStack().length());
+            for (String s : pda.getStates()) {
+                for (int i = 0; i < combinatorics.size(); i++) {
+                    newTransition = new String[]{"<" + pdaTransition.getInitialState() + ",_," + s + ">", pdaTransition.getCharacter()};
+                    for (int j = 0; j < combinatorics.get(0).size() - 1; j++) {
+                        newTransition[1] += "<" + combinatorics.get(i).get(j) + "," +
+                                pdaTransition.getToStack().charAt(j) + "," + combinatorics.get(i).get(j + 1) + ">";
+                    }
+                    int last = combinatorics.get(0).size() - 1;
+                    newTransition[1] += "<" + combinatorics.get(i).get(last) + "," + pdaTransition.getToStack().charAt(last) + "," + s + ">";
+                    transitions.add(newTransition);
+                }
+            }
+
+            combinatorics = generateCombinations(pda.getStates(), pdaTransition.getFinalState(), pdaTransition.getToStack().length() + 1);
+            for (String c : pda.getStackAlphabet()) {
+                for (String s : pda.getStates()) {
+                    for (int i = 0; i < combinatorics.size(); i++) {
+                        newTransition = new String[]{"<" + pdaTransition.getInitialState() + ",_," + s + ">", pdaTransition.getCharacter()};
+                        for (int j = 0; j < combinatorics.get(0).size() - 1; j++) {
+                            newTransition[1] += "<" + combinatorics.get(i).get(j) + "," +
+                                    pdaTransition.getToStack().charAt(j) + "," + combinatorics.get(i).get(j + 1) + ">";
+                        }
+                        int last = combinatorics.get(0).size() - 1;
+                        newTransition[1] += "<" + combinatorics.get(i).get(last) + "," + c + "," + s + ">";
+                        transitions.add(newTransition);
+                    }
+                }
+            }
+        } else {
+            List<List<String>> combinatorics = generateCombinations(pda.getStates(), pdaTransition.getFinalState(), pdaTransition.getToStack().length());
+            for (String s : pda.getStates()) {
+                for (int i = 0; i < combinatorics.size(); i++) {
+                    newTransition = new String[]{"<" + pdaTransition.getInitialState() + "," + pdaTransition.getToPop() + "," + s + ">", pdaTransition.getCharacter()};
+                    for (int j = 0; j < combinatorics.get(0).size() - 1; j++) {
+                        newTransition[1] += "<" + combinatorics.get(i).get(j) + "," +
+                                pdaTransition.getToStack().charAt(j) + "," + combinatorics.get(i).get(j + 1) + ">";
+                    }
+                    int last = combinatorics.get(0).size() - 1;
+                    newTransition[1] += "<" + combinatorics.get(i).get(last) + "," + pdaTransition.getToStack().charAt(last) + "," + s + ">";
+                    transitions.add(newTransition);
+                }
+            }
+        }
+    }
+
     public void addNonTerminalState(String state) {
         nonTerminalStates.add(state);
     }
@@ -54,7 +140,7 @@ public class ContextFreeGrammar {
                 .collect(Collectors.toSet());
         nonTerminalStates.clear();
         nonTerminalStates.addAll(updatedSet);
-        transitions.replaceAll(t -> new String[]{increaseStateNumber(t[0], increment), increaseStateNumbersInString( t[1], increment)});
+        transitions.replaceAll(t -> new String[]{increaseStateNumber(t[0], increment), increaseStateNumbersInString(t[1], increment)});
     }
 
     private String increaseStateNumber(String state, int increment) {
@@ -129,7 +215,7 @@ public class ContextFreeGrammar {
         var grammar = new ContextFreeGrammar();
 
         left.increaseStateNumbers(1);
-        right.increaseStateNumbers(1  + left.getStatesQuantity());
+        right.increaseStateNumbers(1 + left.getStatesQuantity());
 
         grammar.getNonTerminalStates().addAll(left.getNonTerminalStates());
         grammar.getNonTerminalStates().addAll(right.getNonTerminalStates());
@@ -141,5 +227,31 @@ public class ContextFreeGrammar {
         grammar.getTransitions().addAll(right.getTransitions());
 
         return grammar;
+    }
+
+    private List<List<String>> generateCombinations(Set<String> set, String lock, int n) {
+        List<List<String>> results = new ArrayList<>();
+
+        // Start recursive generation with the locked first element
+        List<String> currentCombination = new ArrayList<>();
+        currentCombination.add(lock); // Lock the first element
+        generateRecursive(set, n - 1, currentCombination, results); // Start with n - 1 levels remaining
+
+        return results;
+    }
+
+    private void generateRecursive(Set<String> set, int depth, List<String> currentCombination, List<List<String>> results) {
+        if (depth == 0) {
+            // Base case: if depth is 0, add a copy of the current combination to results
+            results.add(new ArrayList<>(currentCombination));
+            return;
+        }
+
+        // Recursive case: iterate over all elements in the set and add them to the combination
+        for (String element : set) {
+            currentCombination.add(element);
+            generateRecursive(set, depth - 1, currentCombination, results); // Recur with one less level
+            currentCombination.remove(currentCombination.size() - 1); // Backtrack
+        }
     }
 }
