@@ -11,7 +11,8 @@ package automatons {
       +transitions: List<String[]>
       +initialState: String
 
-      +ContextFreeGramar(Expression exp)   
+      +ContextFreeGramar(Expression exp)
+      +ContextFreeGramar(PushdownAutomaton pa)
     }
 
     class PushdownAutomatonTransition {

@@ -39,7 +39,9 @@ public class ContextFreeGrammar {
         for (String f : pda.getFinalState()) {
             newTransition = new String[]{initialState, "<" + pda.getInitialState() + ",_," + f + ">"};
             transitions.add(newTransition);
-            newTransition = new String[]{"<" + f + ",_," + f + ">", "_"};
+        }
+        for (String s : pda.getStates()) {
+            newTransition = new String[]{"<" + s + ",_," + s + ">", "_"};
             transitions.add(newTransition);
         }
 
@@ -50,6 +52,7 @@ public class ContextFreeGrammar {
 
     private void addTransitionsFromPdaTransition(PushdownAutomatonTransition pdaTransition, PushdownAutomaton pda) {
         String[] newTransition;
+        List<String> stackAlphabet = separateStackAlphabet(pdaTransition.getToStack(), pda);
         if (Objects.equals(pdaTransition.getToStack(), "_") && Objects.equals(pdaTransition.getToPop(), "_")) {
             pda.getStackAlphabet().add("_");
             for (String c : pda.getStackAlphabet()) {
@@ -71,28 +74,28 @@ public class ContextFreeGrammar {
                 transitions.add(newTransition);
             }
         } else if (Objects.equals(pdaTransition.getToPop(), "_")) {
-            List<List<String>> combinatorics = generateCombinations(pda.getStates(), pdaTransition.getFinalState(), pdaTransition.getToStack().length());
+            List<List<String>> combinatorics = generateCombinations(pda.getStates(), pdaTransition.getFinalState(), stackAlphabet.size());
             for (String s : pda.getStates()) {
                 for (int i = 0; i < combinatorics.size(); i++) {
                     newTransition = new String[]{"<" + pdaTransition.getInitialState() + ",_," + s + ">", pdaTransition.getCharacter()};
                     for (int j = 0; j < combinatorics.get(0).size() - 1; j++) {
                         newTransition[1] += "<" + combinatorics.get(i).get(j) + "," +
-                                pdaTransition.getToStack().charAt(j) + "," + combinatorics.get(i).get(j + 1) + ">";
+                                stackAlphabet.get(j) + "," + combinatorics.get(i).get(j + 1) + ">";
                     }
                     int last = combinatorics.get(0).size() - 1;
-                    newTransition[1] += "<" + combinatorics.get(i).get(last) + "," + pdaTransition.getToStack().charAt(last) + "," + s + ">";
+                    newTransition[1] += "<" + combinatorics.get(i).get(last) + "," + stackAlphabet.get(last) + "," + s + ">";
                     transitions.add(newTransition);
                 }
             }
 
-            combinatorics = generateCombinations(pda.getStates(), pdaTransition.getFinalState(), pdaTransition.getToStack().length() + 1);
+            combinatorics = generateCombinations(pda.getStates(), pdaTransition.getFinalState(), stackAlphabet.size() + 1);
             for (String c : pda.getStackAlphabet()) {
                 for (String s : pda.getStates()) {
                     for (int i = 0; i < combinatorics.size(); i++) {
                         newTransition = new String[]{"<" + pdaTransition.getInitialState() + ",_," + s + ">", pdaTransition.getCharacter()};
                         for (int j = 0; j < combinatorics.get(0).size() - 1; j++) {
                             newTransition[1] += "<" + combinatorics.get(i).get(j) + "," +
-                                    pdaTransition.getToStack().charAt(j) + "," + combinatorics.get(i).get(j + 1) + ">";
+                                    stackAlphabet.get(j) + "," + combinatorics.get(i).get(j + 1) + ">";
                         }
                         int last = combinatorics.get(0).size() - 1;
                         newTransition[1] += "<" + combinatorics.get(i).get(last) + "," + c + "," + s + ">";
@@ -115,6 +118,20 @@ public class ContextFreeGrammar {
                 }
             }
         }
+    }
+
+    private List<String> separateStackAlphabet(String string, PushdownAutomaton pda) {
+        List<String> stackAlphabet = new ArrayList<>();
+        int i = 0;
+        int j = 1;
+        while (j < string.length() + 1) {
+            if (pda.getStackAlphabet().contains(string.substring(i, j))) {
+                stackAlphabet.add(string.substring(i, j));
+                i = j;
+            }
+            j++;
+        }
+        return stackAlphabet;
     }
 
     public void addNonTerminalState(String state) {
