@@ -115,7 +115,7 @@ public class PushdownAutomaton {
 
         sb.append("s=").append(this.initialState).append("\n");
 
-        sb.append("F=").append("{").append(this.finalState).append("}").append("\n");
+        sb.append("F=").append("{").append(this.finalState.iterator().next()).append("}").append("\n");
 
         return sb.toString();
     }
