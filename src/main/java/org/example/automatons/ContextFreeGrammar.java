@@ -30,19 +30,22 @@ public class ContextFreeGrammar {
 
     public ContextFreeGrammar(PushdownAutomaton pda) {
         nonTerminalStates = new TreeSet<>();
-        terminalStates = new TreeSet<>();
+        terminalStates = new TreeSet<>(pda.getAlphabet());
         transitions = new ArrayList<>();
         initialState = "<S>";
         nonTerminalStates.add(initialState);
         String[] newTransition;
-        // first and second rule
+        // first rule
         for (String f : pda.getFinalState()) {
             newTransition = new String[]{initialState, "<" + pda.getInitialState() + ",_," + f + ">"};
             transitions.add(newTransition);
+            nonTerminalStates.add("<" + pda.getInitialState() + ",_," + f + ">");
         }
+        // second rule
         for (String s : pda.getStates()) {
             newTransition = new String[]{"<" + s + ",_," + s + ">", "_"};
             transitions.add(newTransition);
+            nonTerminalStates.add("<" + s + ",_," + s + ">");
         }
 
         for (PushdownAutomatonTransition pdaTransition : pda.getTransitions()) {
@@ -53,6 +56,7 @@ public class ContextFreeGrammar {
     private void addTransitionsFromPdaTransition(PushdownAutomatonTransition pdaTransition, PushdownAutomaton pda) {
         String[] newTransition;
         List<String> stackAlphabet = separateStackAlphabet(pdaTransition.getToStack(), pda);
+        // rule 4 and 5
         if (Objects.equals(pdaTransition.getToStack(), "_") && Objects.equals(pdaTransition.getToPop(), "_")) {
             pda.getStackAlphabet().add("_");
             for (String c : pda.getStackAlphabet()) {
@@ -62,9 +66,12 @@ public class ContextFreeGrammar {
                             pdaTransition.getCharacter() + "<" + pdaTransition.getFinalState() + "," + c + "," + s + ">"
                     };
                     transitions.add(newTransition);
+                    nonTerminalStates.add("<" + pdaTransition.getInitialState() + "," + c + "," + s + ">");
+                    nonTerminalStates.add("<" + pdaTransition.getFinalState() + "," + c + "," + s + ">");
                 }
             }
             pda.getStackAlphabet().remove("_");
+            // rule 3
         } else if (Objects.equals(pdaTransition.getToStack(), "_")) {
             for (String s : pda.getStates()) {
                 newTransition = new String[]{
@@ -72,13 +79,17 @@ public class ContextFreeGrammar {
                         pdaTransition.getCharacter() + "<" + pdaTransition.getFinalState() + ",_," + s + ">"
                 };
                 transitions.add(newTransition);
+                nonTerminalStates.add("<" + pdaTransition.getInitialState() + "," + pdaTransition.getToPop() + "," + s + ">");
+                nonTerminalStates.add("<" + pdaTransition.getFinalState() + ",_," + s + ">");
             }
+            // rule 7 and 8
         } else if (Objects.equals(pdaTransition.getToPop(), "_")) {
             addTransitionWithStackAlphabet(pdaTransition, pda, stackAlphabet, "_", false);
 
             for (String c : pda.getStackAlphabet()) {
                 addTransitionWithStackAlphabet(pdaTransition, pda, stackAlphabet, c, true);
             }
+            // rule 6
         } else {
             addTransitionWithStackAlphabet(pdaTransition, pda, stackAlphabet, pdaTransition.getToPop(), false);
         }
@@ -86,20 +97,26 @@ public class ContextFreeGrammar {
 
     private void addTransitionWithStackAlphabet(PushdownAutomatonTransition pdaTransition, PushdownAutomaton pda, List<String> stackAlphabet, String toPop, boolean lastEqualPop) {
         String[] newTransition;
+        String newState;
         int numberOfCombinations = stackAlphabet.size();
         if (lastEqualPop) numberOfCombinations++;
         List<List<String>> combinatorics = generateCombinations(pda.getStates(), pdaTransition.getFinalState(), numberOfCombinations);
         for (String s : pda.getStates()) {
             for (int i = 0; i < combinatorics.size(); i++) {
                 newTransition = new String[]{"<" + pdaTransition.getInitialState() + "," + toPop + "," + s + ">", pdaTransition.getCharacter()};
+                nonTerminalStates.add("<" + pdaTransition.getInitialState() + "," + toPop + "," + s + ">");
                 for (int j = 0; j < combinatorics.get(0).size() - 1; j++) {
-                    newTransition[1] += "<" + combinatorics.get(i).get(j) + "," +
+                    newState = "<" + combinatorics.get(i).get(j) + "," +
                             stackAlphabet.get(j) + "," + combinatorics.get(i).get(j + 1) + ">";
+                    newTransition[1] += newState;
+                    nonTerminalStates.add(newState);
                 }
                 int last = combinatorics.get(0).size() - 1;
-                if (lastEqualPop) newTransition[1] += "<" + combinatorics.get(i).get(last) + "," + toPop + "," + s + ">";
-                else newTransition[1] += "<" + combinatorics.get(i).get(last) + "," + stackAlphabet.get(last) + "," + s + ">";
+                if (lastEqualPop) newState = "<" + combinatorics.get(i).get(last) + "," + toPop + "," + s + ">";
+                else newState = "<" + combinatorics.get(i).get(last) + "," + stackAlphabet.get(last) + "," + s + ">";
+                newTransition[1] += newState;
                 transitions.add(newTransition);
+                nonTerminalStates.add(newState);
             }
         }
     }

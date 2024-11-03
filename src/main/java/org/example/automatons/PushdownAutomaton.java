@@ -10,6 +10,15 @@ public class PushdownAutomaton {
     private String initialState;  // s
     private Set<String> finalState;  // F
 
+    public PushdownAutomaton(Set<String> states, Set<String> alphabet, Set<String> stackAlphabet, List<PushdownAutomatonTransition> transitions, String initialState, Set<String> finalState) {
+        this.states = states;
+        this.alphabet = alphabet;
+        this.stackAlphabet = stackAlphabet;
+        this.transitions = transitions;
+        this.initialState = initialState;
+        this.finalState = finalState;
+    }
+
     public PushdownAutomaton(ContextFreeGrammar cfg) {
         formalizeAutomaton(cfg);
     }

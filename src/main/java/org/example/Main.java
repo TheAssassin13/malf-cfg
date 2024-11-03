@@ -2,8 +2,14 @@ package org.example;
 
 import org.example.automatons.ContextFreeGrammar;
 import org.example.automatons.PushdownAutomaton;
+import org.example.automatons.PushdownAutomatonTransition;
 import org.example.expressions.ExpressionFactory;
 import org.example.expressions.InvalidExpression;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class Main {
     public static void main(String[] args) throws InvalidExpression {
@@ -22,5 +28,21 @@ public class Main {
 
         System.out.println("GLC 2 M:");
         System.out.println(grammar2);
+
+        // construction of pda for testing purposes
+        Set<String> states = new TreeSet<>();
+        states.add("0");
+        states.add("1");
+        Set<String> alphabet = new TreeSet<>();
+        alphabet.add("a");
+        alphabet.add("b");
+        Set<String> stackAlphabet = new TreeSet<>();
+        stackAlphabet.add("#");
+        List<PushdownAutomatonTransition> transitions = new ArrayList<>();
+        transitions.add(new PushdownAutomatonTransition("0", "a", "_", "0", "#"));
+        transitions.add(new PushdownAutomatonTransition("0", "b", "#", "1", "_"));
+        transitions.add(new PushdownAutomatonTransition("1", "b", "#", "1", "_"));
+        var pda = new PushdownAutomaton(states, alphabet, stackAlphabet, transitions, "0", states);
+        System.out.println(new ContextFreeGrammar(pda));
     }
 }
