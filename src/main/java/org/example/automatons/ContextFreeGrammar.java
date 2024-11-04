@@ -350,7 +350,8 @@ public class ContextFreeGrammar {
     }
 
     public void addTerminalState(String state) {
-        terminalStates.add(state);
+        if (!state.equals("_"))
+            terminalStates.add(state);
     }
 
     public void addTransition(String from, String to) {
