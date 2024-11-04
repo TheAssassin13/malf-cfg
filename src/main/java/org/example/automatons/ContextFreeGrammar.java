@@ -140,6 +140,17 @@ public class ContextFreeGrammar {
         return separateStackAlphabet(string.substring(i), stackAlphabet);
     }
 
+    private static List<String> getNonTerminalStatesFromTransition(String transition) {
+        List<String> result = new ArrayList<>();
+        Pattern pattern = Pattern.compile("<[^<>]*>"); // TODO: store this pattern as a constant
+        Matcher matcher = pattern.matcher(transition);
+        while (matcher.find()) {
+            result.add(matcher.group());
+        }
+
+        return result;
+    }
+
     public void minimize() {
         do {
             removeUnitProductions();
