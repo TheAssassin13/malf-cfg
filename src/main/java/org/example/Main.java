@@ -29,6 +29,11 @@ public class Main {
         System.out.println("GLC 2 M:");
         System.out.println(grammar2);
 
+        grammar2.minimize();
+
+        System.out.println("GLC 2 M (minimizado):");
+        System.out.println(grammar2);
+
         // construction of pda for testing purposes
         Set<String> states = new TreeSet<>();
         states.add("0");
@@ -43,6 +48,8 @@ public class Main {
         transitions.add(new PushdownAutomatonTransition("0", "b", "#", "1", "_"));
         transitions.add(new PushdownAutomatonTransition("1", "b", "#", "1", "_"));
         var pda = new PushdownAutomaton(states, alphabet, stackAlphabet, transitions, "0", states);
-        System.out.println(new ContextFreeGrammar(pda));
+        var test = new ContextFreeGrammar(pda);
+        test.minimize();
+        System.out.println(test);
     }
 }

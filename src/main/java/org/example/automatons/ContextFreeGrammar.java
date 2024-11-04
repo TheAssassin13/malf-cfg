@@ -55,7 +55,7 @@ public class ContextFreeGrammar {
 
     private void addTransitionsFromPdaTransition(PushdownAutomatonTransition pdaTransition, PushdownAutomaton pda) {
         String[] newTransition;
-        List<String> stackAlphabet = separateStackAlphabet(pdaTransition.getToStack(), pda);
+        List<String> stackAlphabet = separateStackAlphabet(pdaTransition.getToStack(), pda.getStackAlphabet());
         // rule 4 and 5
         if (Objects.equals(pdaTransition.getToStack(), "_") && Objects.equals(pdaTransition.getToPop(), "_")) {
             pda.getStackAlphabet().add("_");
@@ -121,18 +121,100 @@ public class ContextFreeGrammar {
         }
     }
 
-    private List<String> separateStackAlphabet(String string, PushdownAutomaton pda) {
-        List<String> stackAlphabet = new ArrayList<>();
+    private List<String> separateStackAlphabet(String string, Set<String> stackAlphabet) {
+        List<String> result = new ArrayList<>();
         int i = 0;
         int j = 1;
         while (j < string.length() + 1) {
-            if (pda.getStackAlphabet().contains(string.substring(i, j))) {
-                stackAlphabet.add(string.substring(i, j));
+            if (stackAlphabet.contains(string.substring(i, j))) {
+                result.add(string.substring(i, j));
                 i = j;
             }
             j++;
         }
-        return stackAlphabet;
+        return result;
+    }
+
+    public void minimize() {
+        removeUselessProductions();
+    }
+
+    private void removeUselessProductions() {
+        List<String[]> copy = new ArrayList<>();
+        while (!copy.equals(transitions)) {
+            copy = new ArrayList<>(transitions);
+            removeInfiniteProductions();
+            removeUnreachableVariables();
+        }
+    }
+
+    private void removeInfiniteProductions() {
+        Set<String> toRemove = new TreeSet<>(nonTerminalStates);
+        Set<String> terminalStates = new TreeSet<>();
+        for (String[] t : transitions) {
+            int i = 0;
+            while (i < t[1].length() && t[1].charAt(i) != '<') i++;
+            List<String> states = separateStackAlphabet(t[1].substring(i), nonTerminalStates);
+            if (states.isEmpty()) {
+                toRemove.remove(t[0]);
+                terminalStates.add(t[0]);
+            }
+        }
+
+        Set<String> copy = new TreeSet<>();
+        while (!copy.equals(toRemove)) {
+            copy = new TreeSet<>(toRemove);
+            for (String[] t : transitions) {
+                int i = 0;
+                while (i < t[1].length() && t[1].charAt(i) != '<') i++;
+                List<String> states = separateStackAlphabet(t[1].substring(i), terminalStates);
+                if (!states.isEmpty()) {
+                    toRemove.remove(t[0]);
+                    terminalStates.add(t[0]);
+                }
+            }
+        }
+
+        for (String s : toRemove) {
+            removeNonTerminalState(s);
+        }
+    }
+
+    private void removeUnreachableVariables() {
+        Set<String> toRemove = new TreeSet<>(nonTerminalStates);
+        Set<String> copy = new TreeSet<>();
+        while (!copy.equals(toRemove)) {
+            copy = new TreeSet<>(toRemove);
+            for (String s : nonTerminalStates) {
+                if (Objects.equals(s, initialState)) {
+                    toRemove.remove(s);
+                    continue;
+                }
+                for (String[] t : transitions) {
+                    int i = 0;
+                    while (i < t[1].length() && t[1].charAt(i) != '<') i++;
+                    List<String> states = separateStackAlphabet(t[1].substring(i), nonTerminalStates);
+                    if (states.contains(s)) toRemove.remove(s);
+                }
+            }
+
+            for (String s : toRemove) {
+                removeNonTerminalState(s);
+            }
+        }
+
+    }
+
+    private void removeNonTerminalState(String state) {
+        ArrayList<String[]> toRemove = new ArrayList<>();
+        for (String[] t : transitions) {
+            if (t[0].contains(state)) toRemove.add(t);
+            if (t[1].contains(state)) toRemove.add(t);
+        }
+        for (String[] t : toRemove) {
+            transitions.remove(t);
+        }
+        nonTerminalStates.remove(state);
     }
 
     public void addNonTerminalState(String state) {
