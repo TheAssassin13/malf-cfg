@@ -1,7 +1,5 @@
 package org.example.automatons;
 
-import com.sun.source.tree.Tree;
-
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -135,8 +133,44 @@ public class ContextFreeGrammar {
         return result;
     }
 
+    private List<String> separateStackAlphabetWithCharacters(String string, Set<String> stackAlphabet) {
+        int i = 0;
+        while (i < string.length() && string.charAt(i) != '<') i++;
+        return separateStackAlphabet(string.substring(i), stackAlphabet);
+    }
+
     public void minimize() {
+        removeEmptyCharacterWhenConcatenated();
+        removeUnitProductions();
         removeUselessProductions();
+    }
+
+    private void removeEmptyCharacterWhenConcatenated() {
+        for (String[] t : transitions) {
+            if (t[1].length() > 1 && t[1].charAt(0) == '_') t[1] = t[1].substring(1);
+        }
+    }
+
+    private void removeUnitProductions() {
+        List<String[]> newTransitions = new ArrayList<>();
+        for (String[] t : transitions) {
+            List<String> states = separateStackAlphabetWithCharacters(t[1], nonTerminalStates);
+            if (!terminalStates.contains(Character.toString(t[1].charAt(0))) && states.size() == 1) continue;
+            newTransitions.add(t);
+        }
+
+        for (String[] t : transitions) {
+            List<String> states = separateStackAlphabetWithCharacters(t[1], nonTerminalStates);
+            if (states.size() != 1) continue;
+            if (terminalStates.contains(Character.toString(t[1].charAt(0)))) continue;
+            for (String[] t2 : transitions) {
+                if (Objects.equals(t2[0], states.get(0))) {
+                    newTransitions.add(new String[]{t[0], t2[1]});
+                }
+            }
+        }
+
+        transitions = newTransitions;
     }
 
     private void removeUselessProductions() {
@@ -152,9 +186,7 @@ public class ContextFreeGrammar {
         Set<String> toRemove = new TreeSet<>(nonTerminalStates);
         Set<String> terminalStates = new TreeSet<>();
         for (String[] t : transitions) {
-            int i = 0;
-            while (i < t[1].length() && t[1].charAt(i) != '<') i++;
-            List<String> states = separateStackAlphabet(t[1].substring(i), nonTerminalStates);
+            List<String> states = separateStackAlphabetWithCharacters(t[1], nonTerminalStates);
             if (states.isEmpty()) {
                 toRemove.remove(t[0]);
                 terminalStates.add(t[0]);
@@ -165,9 +197,7 @@ public class ContextFreeGrammar {
         while (!copy.equals(toRemove)) {
             copy = new TreeSet<>(toRemove);
             for (String[] t : transitions) {
-                int i = 0;
-                while (i < t[1].length() && t[1].charAt(i) != '<') i++;
-                List<String> states = separateStackAlphabet(t[1].substring(i), terminalStates);
+                List<String> states = separateStackAlphabetWithCharacters(t[1], terminalStates);
                 if (!states.isEmpty()) {
                     toRemove.remove(t[0]);
                     terminalStates.add(t[0]);
@@ -191,9 +221,7 @@ public class ContextFreeGrammar {
                     continue;
                 }
                 for (String[] t : transitions) {
-                    int i = 0;
-                    while (i < t[1].length() && t[1].charAt(i) != '<') i++;
-                    List<String> states = separateStackAlphabet(t[1].substring(i), nonTerminalStates);
+                    List<String> states = separateStackAlphabetWithCharacters(t[1], nonTerminalStates);
                     if (states.contains(s)) toRemove.remove(s);
                 }
             }
