@@ -170,11 +170,11 @@ public class ContextFreeGrammar {
     public void minimize() {
         do {
             removeUnitProductions();
+            removeUselessTransitions();
             removeUselessProductions();
+            renameNonTerminalStates();
+            removeEmptyCharacterWhenConcatenated();
         } while (inlineExpansion());
-
-        renameNonTerminalStates();
-        removeEmptyCharacterWhenConcatenated();
     }
 
     private boolean inlineExpansion() {
@@ -187,6 +187,7 @@ public class ContextFreeGrammar {
             for (String[] t2 : transitions) {
                 if (Objects.equals(t2[0], t[0]) && !Objects.equals(t2[1], t[1])) {
                     flag = 1;
+                    break;
                 }
             }
             if (flag == 1)
@@ -206,7 +207,50 @@ public class ContextFreeGrammar {
             if (t[1].length() <= 1)
                 continue;
             t[1] = t[1].replaceAll("_", "");
+            if (t[1].isEmpty()) t[1] = "_";
         }
+    }
+
+    private void removeUselessTransitions() {
+        removeTransitionsToItself();
+        removeRepeatedTransitions();
+    }
+
+    private void removeTransitionsToItself() {
+        List<String[]> toRemove = new ArrayList<>();
+        for (String[] t : transitions) {
+            List <String> states = getNonTerminalStatesFromTransition(t[1]);
+            if (states.size() == 1 && states.contains(t[0])) {
+                String[] copy = new String[]{t[0], t[1]};
+                copy[1] = copy[1].replaceAll(t[0], "");
+                int flag = 0;
+                for (int i = 0; i < copy[1].length(); i++) {
+                    if (terminalStates.contains(Character.toString(copy[1].charAt(i)))) {
+                        flag = 1;
+                        break;
+                    }
+                }
+                if (flag == 0) toRemove.add(t);
+            }
+        }
+
+        for (String[] t : toRemove) {
+            transitions.remove(t);
+        }
+    }
+
+    private void removeRepeatedTransitions() {
+        List<String[]> uniqueList = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+
+        for (String[] arr : transitions) {
+            String arrayAsString = Arrays.toString(arr);
+            if (seen.add(arrayAsString)) {
+                uniqueList.add(arr);
+            }
+        }
+
+        transitions = uniqueList;
     }
 
     private void removeUnitProductions() {
