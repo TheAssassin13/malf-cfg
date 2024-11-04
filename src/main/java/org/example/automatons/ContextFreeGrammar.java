@@ -140,14 +140,34 @@ public class ContextFreeGrammar {
     }
 
     public void minimize() {
-        removeEmptyCharacterWhenConcatenated();
         removeUnitProductions();
+        inlineExpansion();
         removeUselessProductions();
+        renameNonTerminalStates();
+        removeEmptyCharacterWhenConcatenated();
+    }
+
+    private void inlineExpansion() {
+        for (String[] t : transitions) {
+            List<String> states = separateStackAlphabetWithCharacters(t[1], nonTerminalStates);
+            if (!states.isEmpty()) continue;
+            int flag = 0;
+            for (String[] t2 : transitions) {
+                if (Objects.equals(t2[0], t[0]) && !Objects.equals(t2[1], t[1])) {
+                    flag = 1;
+                }
+            }
+            if (flag == 1) continue;
+            for (String[] t2 : transitions) {
+                if (t2[1].contains(t[0])) t2[1] = t2[1].replaceAll(t[0], t[1]);
+            }
+        }
     }
 
     private void removeEmptyCharacterWhenConcatenated() {
         for (String[] t : transitions) {
-            if (t[1].length() > 1 && t[1].charAt(0) == '_') t[1] = t[1].substring(1);
+            if (t[1].length() <= 1) continue;
+            t[1] = t[1].replaceAll("_", "");
         }
     }
 
@@ -259,6 +279,26 @@ public class ContextFreeGrammar {
 
     public void setInitialState(String initialState) {
         this.initialState = initialState;
+    }
+
+    private void renameNonTerminalStates() {
+        List<String> toRemove = new ArrayList<>();
+        List<String> toAdd = new ArrayList<>();
+        int counter = 1;
+        for (String state : nonTerminalStates) {
+            if (Objects.equals(state, initialState)) continue;
+            for (String[] t : transitions) {
+                t[0] = t[0].replaceAll(state, "<S" + counter + ">");
+                t[1] = t[1].replaceAll(state, "<S" + counter + ">");
+            }
+            toRemove.add(state);
+            toAdd.add("<S" + counter + ">");
+            counter++;
+        }
+        for (String s : toRemove) {
+            nonTerminalStates.remove(s);
+        }
+        nonTerminalStates.addAll(toAdd);
     }
 
     public void increaseStateNumbers(int increment) {
