@@ -331,7 +331,6 @@ public class ContextFreeGrammar {
                 removeNonTerminalState(s);
             }
         }
-
     }
 
     private void removeNonTerminalState(String state) {
@@ -481,26 +480,23 @@ public class ContextFreeGrammar {
     private List<List<String>> generateCombinations(Set<String> set, String lock, int n) {
         List<List<String>> results = new ArrayList<>();
 
-        // Start recursive generation with the locked first element
         List<String> currentCombination = new ArrayList<>();
-        currentCombination.add(lock); // Lock the first element
-        generateRecursive(set, n - 1, currentCombination, results); // Start with n - 1 levels remaining
+        currentCombination.add(lock);
+        generateRecursive(set, n - 1, currentCombination, results);
 
         return results;
     }
 
     private void generateRecursive(Set<String> set, int depth, List<String> currentCombination, List<List<String>> results) {
         if (depth == 0) {
-            // Base case: if depth is 0, add a copy of the current combination to results
             results.add(new ArrayList<>(currentCombination));
             return;
         }
 
-        // Recursive case: iterate over all elements in the set and add them to the combination
         for (String element : set) {
             currentCombination.add(element);
-            generateRecursive(set, depth - 1, currentCombination, results); // Recur with one less level
-            currentCombination.remove(currentCombination.size() - 1); // Backtrack
+            generateRecursive(set, depth - 1, currentCombination, results);
+            currentCombination.remove(currentCombination.size() - 1);
         }
     }
 }

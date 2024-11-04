@@ -33,23 +33,5 @@ public class Main {
 
         System.out.println("GLC 2 M (minimizado):");
         System.out.println(grammar2);
-
-        // construction of pda for testing purposes
-        Set<String> states = new TreeSet<>();
-        states.add("0");
-        states.add("1");
-        Set<String> alphabet = new TreeSet<>();
-        alphabet.add("a");
-        alphabet.add("b");
-        Set<String> stackAlphabet = new TreeSet<>();
-        stackAlphabet.add("#");
-        List<PushdownAutomatonTransition> transitions = new ArrayList<>();
-        transitions.add(new PushdownAutomatonTransition("0", "a", "_", "0", "#"));
-        transitions.add(new PushdownAutomatonTransition("0", "b", "#", "1", "_"));
-        transitions.add(new PushdownAutomatonTransition("1", "b", "#", "1", "_"));
-        var pda = new PushdownAutomaton(states, alphabet, stackAlphabet, transitions, "0", states);
-        var test = new ContextFreeGrammar(pda);
-        test.minimize();
-        System.out.println(test);
     }
 }
