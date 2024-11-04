@@ -133,21 +133,37 @@ public class ContextFreeGrammar {
         return result;
     }
 
-    private List<String> separateStackAlphabetWithCharacters(String string, Set<String> stackAlphabet) {
-        int i = 0;
-        while (i < string.length() && string.charAt(i) != '<')
-            i++;
-        return separateStackAlphabet(string.substring(i), stackAlphabet);
+    private boolean allStatesAreInSet(String states, Set<String> set) {
+        List<String> separatedStates = getNonTerminalStatesFromTransition(states);
+        for (String state : separatedStates) {
+            if (!set.contains(state)) return false;
+        }
+        return true;
     }
 
     private static List<String> getNonTerminalStatesFromTransition(String transition) {
         List<String> result = new ArrayList<>();
-        Pattern pattern = Pattern.compile("<[^<>]*>"); // TODO: store this pattern as a constant
-        Matcher matcher = pattern.matcher(transition);
-        while (matcher.find()) {
-            result.add(matcher.group());
-        }
+        int openIndex = -1;
+        int balance = 0;
 
+        for (int i = 0; i < transition.length(); i++) {
+            char c = transition.charAt(i);
+
+            if (c == '<') {
+                if (balance == 0) {
+                    openIndex = i;
+                }
+                balance++;
+            }
+
+            else if (c == '>') {
+                balance--;
+                if (balance == 0 && openIndex != -1) {
+                    result.add(transition.substring(openIndex, i + 1));
+                    openIndex = -1;
+                }
+            }
+        }
         return result;
     }
 
@@ -164,7 +180,7 @@ public class ContextFreeGrammar {
     private boolean inlineExpansion() {
         var changed = false;
         for (String[] t : transitions) {
-            List<String> states = separateStackAlphabetWithCharacters(t[1], nonTerminalStates);
+            List<String> states = getNonTerminalStatesFromTransition(t[1]);
             if (!states.isEmpty())
                 continue;
             int flag = 0;
@@ -196,13 +212,13 @@ public class ContextFreeGrammar {
     private void removeUnitProductions() {
         List<String[]> newTransitions = new ArrayList<>();
         for (String[] t : transitions) {
-            List<String> states = separateStackAlphabetWithCharacters(t[1], nonTerminalStates);
+            List<String> states = getNonTerminalStatesFromTransition(t[1]);
             if (!terminalStates.contains(Character.toString(t[1].charAt(0))) && states.size() == 1) continue;
             newTransitions.add(t);
         }
 
         for (String[] t : transitions) {
-            List<String> states = separateStackAlphabetWithCharacters(t[1], nonTerminalStates);
+            List<String> states = getNonTerminalStatesFromTransition(t[1]);
             if (states.size() != 1) continue;
             if (terminalStates.contains(Character.toString(t[1].charAt(0)))) continue;
             for (String[] t2 : transitions) {
@@ -228,7 +244,7 @@ public class ContextFreeGrammar {
         Set<String> toRemove = new TreeSet<>(nonTerminalStates);
         Set<String> terminalStates = new TreeSet<>();
         for (String[] t : transitions) {
-            List<String> states = separateStackAlphabetWithCharacters(t[1], nonTerminalStates);
+            List<String> states = getNonTerminalStatesFromTransition(t[1]);
             if (states.isEmpty()) {
                 toRemove.remove(t[0]);
                 terminalStates.add(t[0]);
@@ -239,8 +255,7 @@ public class ContextFreeGrammar {
         while (!copy.equals(toRemove)) {
             copy = new TreeSet<>(toRemove);
             for (String[] t : transitions) {
-                List<String> states = separateStackAlphabetWithCharacters(t[1], terminalStates);
-                if (!states.isEmpty()) {
+                if (allStatesAreInSet(t[1], terminalStates)) {
                     toRemove.remove(t[0]);
                     terminalStates.add(t[0]);
                 }
@@ -263,7 +278,7 @@ public class ContextFreeGrammar {
                     continue;
                 }
                 for (String[] t : transitions) {
-                    List<String> states = separateStackAlphabetWithCharacters(t[1], nonTerminalStates);
+                    List<String> states = getNonTerminalStatesFromTransition(t[1]);
                     if (states.contains(s)) toRemove.remove(s);
                 }
             }
