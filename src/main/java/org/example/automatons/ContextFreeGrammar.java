@@ -135,38 +135,49 @@ public class ContextFreeGrammar {
 
     private List<String> separateStackAlphabetWithCharacters(String string, Set<String> stackAlphabet) {
         int i = 0;
-        while (i < string.length() && string.charAt(i) != '<') i++;
+        while (i < string.length() && string.charAt(i) != '<')
+            i++;
         return separateStackAlphabet(string.substring(i), stackAlphabet);
     }
 
     public void minimize() {
-        removeUnitProductions();
-        inlineExpansion();
-        removeUselessProductions();
+        do {
+            removeUnitProductions();
+            removeUselessProductions();
+        } while (inlineExpansion());
+
         renameNonTerminalStates();
         removeEmptyCharacterWhenConcatenated();
     }
 
-    private void inlineExpansion() {
+    private boolean inlineExpansion() {
+        var changed = false;
         for (String[] t : transitions) {
             List<String> states = separateStackAlphabetWithCharacters(t[1], nonTerminalStates);
-            if (!states.isEmpty()) continue;
+            if (!states.isEmpty())
+                continue;
             int flag = 0;
             for (String[] t2 : transitions) {
                 if (Objects.equals(t2[0], t[0]) && !Objects.equals(t2[1], t[1])) {
                     flag = 1;
                 }
             }
-            if (flag == 1) continue;
+            if (flag == 1)
+                continue;
             for (String[] t2 : transitions) {
-                if (t2[1].contains(t[0])) t2[1] = t2[1].replaceAll(t[0], t[1]);
+                if (t2[1].contains(t[0])) {
+                    t2[1] = t2[1].replaceAll(t[0], t[1]);
+                    changed = true;
+                }
             }
         }
+        return changed;
     }
 
     private void removeEmptyCharacterWhenConcatenated() {
         for (String[] t : transitions) {
-            if (t[1].length() <= 1) continue;
+            if (t[1].length() <= 1)
+                continue;
             t[1] = t[1].replaceAll("_", "");
         }
     }
